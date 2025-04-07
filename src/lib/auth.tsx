@@ -9,7 +9,6 @@ import {
 } from "firebase/auth";
 import {
   createContext,
-  useContext,
   useEffect,
   useState,
   useCallback,
