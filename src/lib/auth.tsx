@@ -6,6 +6,8 @@ import {
   type Auth as FirebaseAuth,
   type User,
   onAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithPopup,
 } from "firebase/auth";
 import {
   createContext,
@@ -28,12 +30,14 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const googleProvider = new GoogleAuthProvider();
 
 interface Auth {
   login(email: string, password: string): Promise<void>;
   logout(): Promise<void>;
   auth: FirebaseAuth;
   user: User | null;
+  googleLogin(): Promise<void>;
 }
 
 const AuthContext = createContext<Auth | undefined>(undefined);
@@ -60,17 +64,23 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     await signOut(auth);
   }, []);
 
-  const value = useMemo<Auth>(
-    () => ({
-      login,
-      logout,
-      auth,
-      user,
-    }),
-    [login, logout, user],
-  );
+  const googleLogin = useCallback(async () => {
+    await signInWithPopup(auth, googleProvider);
+  }, []);
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{
+        login,
+        logout,
+        auth,
+        user,
+        googleLogin,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 export { AuthContext, AuthProvider };
