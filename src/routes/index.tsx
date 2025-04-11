@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
-import { useCallback, useContext, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { PetsClientContext } from "@/lib/petsClient";
 import { AuthContext } from "@/lib/auth";
+import { CentrifugeClientContext } from "@/lib/centrifugeClient";
 
 export const Route = createFileRoute("/")({
   component: App,
@@ -12,11 +13,26 @@ export const Route = createFileRoute("/")({
 function App() {
   const auth = useContext(AuthContext);
   const client = useContext(PetsClientContext);
+  const centrifuge = useContext(CentrifugeClientContext);
   const query = useQuery({
     queryKey: ["pets", client],
     queryFn: () => client?.GET("/pet"),
     enabled: () => !!client,
   });
+
+  useEffect(() => {
+    if (!centrifuge) return;
+    const sub = centrifuge.newSubscription("chat");
+    sub.on("publication", function (ctx) {
+      console.log(`centrifuge: ${JSON.stringify(ctx.data)}`);
+    });
+    sub.subscribe();
+
+    return () => {
+      sub.unsubscribe();
+      centrifuge.removeSubscription(sub);
+    };
+  }, [centrifuge]);
 
   // Add state for form inputs
   const [username, setUsername] = useState("");

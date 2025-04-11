@@ -1,29 +1,15 @@
 import type { Client, Middleware } from "openapi-fetch";
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useMemo } from "react";
 import type { paths } from "./api/petstore";
-import { AuthContext } from "./auth";
 import createClient from "openapi-fetch";
+import { useAuthToken } from "./useAuthToken.tsx";
 
 const PetsClientContext = createContext<Client<paths> | null>(null);
 
 const PetsClientProvider = ({ children }: { children: React.ReactNode }) => {
-  const auth = useContext(AuthContext);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const accessToken = useAuthToken();
 
-  useEffect(() => {
-    const getToken = async () => {
-      if (auth?.user) {
-        const token = await auth.user.getIdToken();
-        setAccessToken(token);
-      } else {
-        setAccessToken(null);
-      }
-    };
-
-    getToken();
-  }, [auth?.user]);
-
-  let client = useMemo(() => {
+  const client = useMemo(() => {
     if (!accessToken) {
       return null;
     }
